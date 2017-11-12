@@ -1,0 +1,80 @@
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8">
+</head>
+<body>
+<h1 id="redux">Redux中的数据操作及流向总结</h1>
+<h2 id="1-redux">1. Redux中与数据流有关的概念</h2>
+<ul>
+    <li>
+        <p><strong>State</strong><br />
+            <code>Redux</code>中数据的储存形式，一般是以树的形式来组织（一般会用到对象、数组）</p>
+        <hr />
+    </li>
+    <li>
+        <p><strong>Store</strong><br />
+            <code>Redux</code>中数据储存的位置，一般直接调用<code>redux</code>库中的<code>createStore()</code>来创建store，数据的更新（通过<code>store.dispatch()</code>）、数据的获取（通过<code>store.getState()</code>）均通过<code>store</code>实例对象的方法来操作</p>
+        <hr />
+    </li>
+    <li>
+        <p><strong>Action</strong><br />
+            本质是一个对象，通过<code>Action Creator函数</code>创建，用来告知<code>Reducer</code>函数将对数据进行什么样的操作（通过<code>action.type</code>）,以及向<code>Reducer</code>函数传递操作数据所需要的具体信息（通过<code>action</code>的其他属性值）。</p>
+        <hr />
+    </li>
+    <li>
+        <p><strong>Reducer</strong><br />
+            管理<code>state</code>中数据的函数，接收一个<code>action</code>，根据<code>action</code>的要求来改变state中数据的内容，返回改变之后的<code>state</code>。若未接收action,则会返回默认的<code>state</code>（注意：<code>Reducer</code>是一个纯函数，也就是说，传入同样参数时，会返回同样的结果）</p>
+        <hr />
+    </li>
+</ul>
+<h2 id="2-redux">2. Redux中的操作与数据流</h2>
+<ol>
+    <li>
+        <p>初始化<code>state</code>：<br />
+            步骤：调用<code>createStore()</code>，并将<code>rootReducer</code>作为参数传入，返回一个<code>store</code>，rootReducer中定义的默认<code>state</code>会存入<code>store</code>中,例如：</p>
+        <pre><code>//  index.js
+import {createStore} from 'redux'
+import rootReducer from 'reducers'
+
+const store=createStore(rootReducer)
+console.log(store.getState())       //  打印初始的state对象
+</code></pre>
+        <p>数据流向：在这个过程中，因为没有外界输入，数据的流动比较简单，只是将<code>rootReducer</code>中预定义的<code>state</code>默认数据放到了store中。如果配合<code>React</code>使用的话，<code>React</code>可以通过<code>store.getState()</code>获取初始的<code>state</code>，并进行页面渲染或者其他必要操作。</p>
+    </li>
+    <li>
+        <p>操作<code>state</code>：<br />
+            步骤：使用特定的<code>action creator</code>(大多数时候需要传入相应参数)创建相应的<code>action</code>。然后，调用<code>store.dispatch()</code>，并把创建的<code>action</code>作为参数传入。这时，<code>Reducer函数</code>会根据<code>action.type</code>的不同值和<code>action</code>携带的不同信息，返回不同的新state（注意：这里返回的<code>state</code>是重新构造的，而不是在原state基础上进行的修改），例如：</p>
+        <pre><code>//  index.js
+import {addTodo} from 'actions'     //  addTodo是一个action creator
+
+store.dispatch(addTodo(text));
+console.log(store.getState())       //  打印执行完action后的state对象
+</code></pre>
+        <p>数据流向：在这个过程中，需要更新的数据，通过<code>action creator</code>参数的形式传入，并通过<code>store.dispatch()</code>传到<code>reducer</code>中，根据之前在<code>reducer</code>中写好的方式，组织成新的<code>state</code>树，替换掉<code>store</code>中旧的state。如果配合<code>React</code>使用的话，<code>React</code>会通过<code>store.getState()</code>获取更新后的<code>state</code>，然后对页面进行重新渲染或者其他必要的操作。</p>
+    </li>
+    <li>
+        <p>*异步操作<code>state</code>（结合网络请求）：<br />
+            步骤：先创建一个特殊的<code>异步action creator</code>，这个<code>action creator</code>返回的不再是一个对象，而是一个函数。实际上，在使用<code>Redux Thunk middleware</code>（一个Redux的标准中间件）后，这时的<code>action creator</code>就变成了一个<code>thunk</code>函数。在返回的函数体中，写好需要进行的网络请求，以及，<code>post</code>成功或者失败后需要进行的异步操作。最终，在执行完<code>store.dispatch()</code>后，会返回一个<code>Response</code>对象，这个<code>Response</code>对象后可以跟一个或多个<code>then</code>，即执行一个或多个异步操作，例如：</p>
+        <pre><code>//  action.js
+function fetchPosts (parameter) {
+//  这里，在Thunk middleware的神奇功效下，可以把dispatch方法作为参数传入，使得在此函数内部也可以进行dispatch操作
+return (dispatch) =&gt; {
+    dispatch(requestPosts(parameter))
+    return fetch(`http://www.xxx.com/xxx/xxx.json`)
+        .then(response =&gt; response.json())
+        .then(json =&gt; dispatch(receivePosts(parameter, json)))
+    }
+}
+//  requestPosts()和receivePosts()是两个同步action creator,分别用来在请求发出的时刻和接受到响应的时刻更新state的状态
+
+//  index.js
+store.dispatch(fetchPosts('xxx')).then(() =&gt;
+     console.log(store.getState())
+)
+//  网络请求响应成功，并使用返回的数据更新State后，打印更新后的state
+</code></pre>
+        <p>数据流向：由于加入了网络请求更新的数据，这里的数据流向变得有点复杂。首先，当我们执行<code>fetchPosts()</code>，并把返回的函数传入<code>store.dispatch()</code>。这时，<code>Thunk middleware</code>发挥功效，将<code>store.dispacth</code>方法传入该函数，并执行该函数。执行该函数时，首先，<code>requestPosts()</code>函数接收<code>parameter</code>，并返回一个相应的<code>action</code>，传给<code>dispatch</code>方法，此时，<code>Reducer</code>中会对<code>state</code>进行相应的更新，<code>state</code>状态变为发出网络请求；接下来，通过<code>fetch</code>发出网络请求，它会立刻返回一个Promise，如果，当<code>Promise</code>被通过，会返回一个<code>Response</code>对象会执行下面的then里面的异步操作。在本例中，会先取返回的<code>Response.json()</code>，作为参数传给下一个then，在下一个then中，传给<code>receivePosts()</code>,同时，<code>receivePosts()</code>会接收<code>parameter</code>，产生一个<code>action</code>,传给<code>dispacth</code>方法。这时，网络请求获取到的数据就成功送到了<code>state</code>中，完成了动态的更新。</p>
+    </li>
+</ol>
+</body>
+</html>
