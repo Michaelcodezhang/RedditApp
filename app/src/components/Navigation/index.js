@@ -1,16 +1,28 @@
 import React, {Component} from 'react'
 import {Link} from 'react-router'
+import {Menu, Button} from 'antd'
+const MenuItem = Menu.Item
+const SubMenu = Menu.SubMenu
+const MenuItemGroup = Menu.ItemGroup
 
-class Navigation extends Component{
+class Navigation extends Component {
   render () {
     return (
-      <div className="nav-contain">
-        <ol>
-          <Link to='/'><li>main</li></Link>
-          <Link to='cat'><li>cat</li></Link>
-          <Link to='dog'><li>dog</li></Link>
-        </ol>
-      </div>
+      <Menu mode='horizontal'>
+        <Menu.Item>
+          <Link to='/'><Button type='primary'>main</Button></Link>
+        </Menu.Item>
+        <SubMenu title='Animal'>
+          <MenuItemGroup>
+            <Menu.Item>
+              <Link to='/cat'>cat</Link>
+            </Menu.Item>
+            <Menu.Item>
+              <Link to='/dog'>dog</Link>
+            </Menu.Item>
+          </MenuItemGroup>
+        </SubMenu>
+      </Menu>
     )
   }
 }
