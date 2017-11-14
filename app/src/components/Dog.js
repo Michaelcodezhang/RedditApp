@@ -4,7 +4,7 @@ class Dog extends Component {
   render () {
     return (
       <div>
-        <h2>This is lovely dog~</h2>
+        <h1>This is lovely dog~</h1>
         <img src={require('../images/dog.jpg')} style={{height: '300px'}} />
       </div>
     )

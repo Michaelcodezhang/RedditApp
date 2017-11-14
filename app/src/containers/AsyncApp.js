@@ -1,6 +1,6 @@
 import React, { Component, PropTypes } from 'react'
 import { connect } from 'react-redux'
-import { selectSubreddit, fetchPostsIfNeeded, invalidateSubreddit } from '../actions/action'
+import {selectSubreddit, fetchPostsIfNeeded, invalidateSubreddit, requestPosts} from '../actions/action'
 import Picker from '../components/Picker'
 import Posts from '../components/Posts'
 
@@ -13,13 +13,13 @@ class AsyncApp extends Component {
 
   componentDidMount() {
     const { dispatch, selectedSubreddit } = this.props
-    dispatch(fetchPostsIfNeeded(selectedSubreddit))
+    dispatch(requestPosts(selectedSubreddit))
   }
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.selectedSubreddit !== this.props.selectedSubreddit) {
       const { dispatch, selectedSubreddit } = nextProps
-      dispatch(fetchPostsIfNeeded(selectedSubreddit))
+      dispatch(requestPosts(selectedSubreddit))
     }
   }
 
@@ -32,7 +32,7 @@ class AsyncApp extends Component {
 
     const { dispatch, selectedSubreddit } = this.props
     dispatch(invalidateSubreddit(selectedSubreddit))
-    dispatch(fetchPostsIfNeeded(selectedSubreddit))
+    dispatch(requestPosts(selectedSubreddit))
   }
 
   render () {
